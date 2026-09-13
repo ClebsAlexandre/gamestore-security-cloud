@@ -1,35 +1,72 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [email, setEmail] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Simulate frontend validation pass
+    setSubmitted(true);
+    setTimeout(() => setSubmitted(false), 3000);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="gamestore-container">
+      <header className="header">
+        <h1>🎮 GameStore Cloud</h1>
+        <p>Compre o novo CyberQuest 2077 - Edição Digital</p>
+      </header>
+
+      <main className="checkout-main">
+        <div className="product-card">
+          <div className="product-image"></div>
+          <h2>CyberQuest 2077</h2>
+          <p className="price">R$ 299,00</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="checkout-form">
+          <h3>Checkout Rápido</h3>
+          
+          <div className="form-group">
+            <label htmlFor="email">Email para recebimento da chave:</label>
+            {/* Checklist: Tipagem de Input (email) e Campo Obrigatório */}
+            <input 
+              id="email"
+              type="email" 
+              required 
+              placeholder="seu.email@exemplo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="quantity">Quantidade de Cópias:</label>
+            {/* Checklist: Tipagem de Input (number) e Campo Obrigatório */}
+            <input 
+              id="quantity"
+              type="number" 
+              required 
+              min="1"
+              max="5"
+              placeholder="1"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+            />
+          </div>
+
+          <button type="submit" className="buy-button">Finalizar Compra</button>
+          
+          {submitted && (
+            <div className="success-msg">✅ Estado validado e compra enviada!</div>
+          )}
+        </form>
+      </main>
+    </div>
+  );
 }
 
-export default App
+export default App;
