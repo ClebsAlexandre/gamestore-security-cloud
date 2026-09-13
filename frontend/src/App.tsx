@@ -4,7 +4,28 @@ import './App.css';
 function App() {
   const [email, setEmail] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [phone, setPhone] = useState('');
   const [submitted, setSubmitted] = useState(false);
+
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+    value = value
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})/, '$1-$2');
+    setCpf(value);
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+    value = value
+      .replace(/(\d{2})(\d)/, '($1) $2')
+      .replace(/(\d{5})(\d)/, '$1-$2');
+    setPhone(value);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +61,34 @@ function App() {
               placeholder="seu.email@exemplo.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="cpf">CPF do Titular (Máscara e Limite):</label>
+            {/* Checklist: Máscaras de Entrada e Limite de Caracteres (Buffer Overflow) */}
+            <input 
+              id="cpf"
+              type="text" 
+              required 
+              maxLength={14}
+              placeholder="000.000.000-00"
+              value={cpf}
+              onChange={handleCpfChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="phone">Telefone (Máscara e Limite):</label>
+            {/* Checklist: Máscaras de Entrada e Limite de Caracteres (Buffer Overflow) */}
+            <input 
+              id="phone"
+              type="text" 
+              required 
+              maxLength={15}
+              placeholder="(00) 00000-0000"
+              value={phone}
+              onChange={handlePhoneChange}
             />
           </div>
 
