@@ -39,6 +39,17 @@ if (cluster.isPrimary) {
     next(erroGrave); 
   });
 
+  // Rota para testar a Disponibilidade (Derruba o processo)
+  app.get('/api/kill', (req, res) => {
+    console.log(`[Worker ${process.pid}] Recebeu comando de kill. Simulando queda fatal...`);
+    process.exit(1);
+  });
+
+  // Rota para retornar o ID do Processo atual (Provar a ressurreição)
+  app.get('/api/pid', (req, res) => {
+    res.json({ pid: process.pid });
+  });
+
   // Rota de Checkout Segura (Implementa Integridade via SQLite)
   app.post('/api/checkout', (req, res, next) => purchaseController.checkout(req, res, next));
 
@@ -46,18 +57,16 @@ if (cluster.isPrimary) {
   // CHECKLIST: A Tríade CID no Back-End
   // 1. CONFIDENCIALIDADE (Tratamento Seguro de Erros)
   // ==========================================
+  // Middleware global de tratamento de erros (Garante a Confidencialidade)
   app.use((err, req, res, next) => {
+    // 1. O erro real (que contém caminhos de pasta e possíveis senhas)
+    // é logado de forma "invisível" apenas no terminal do servidor (onde o usuário não tem acesso)
     console.error(`[Worker ${process.pid}] [LOG SECRETO]`, err.stack); 
 
-    if (process.env.NODE_ENV === 'production') {
-      return res.status(500).json({
-        erro: 'Ocorreu um erro interno no servidor. Tente novamente mais tarde.',
-      });
-    }
-
+    // 2. O usuário web (e o frontend) recebe APENAS uma mensagem mascarada e genérica.
+    // Isso impede que um hacker use o stack trace para descobrir como o sistema funciona por dentro.
     return res.status(500).json({
-      erro: err.message,
-      stack: err.stack
+      erro: 'Ocorreu um erro interno no servidor. Tente novamente mais tarde.'
     });
   });
 

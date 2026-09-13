@@ -3,17 +3,28 @@ const db = require('../database');
 class PurchaseRepository {
   create(purchaseData) {
     return new Promise((resolve, reject) => {
-      // Uso de Prepared Statements (?) para evitar SQL Injection. 
-      // Isso é fundamental para manter a INTEGRIDADE do banco de dados.
-      const sql = `INSERT INTO purchases (game_title, email, cpf, phone, quantity) VALUES (?, ?, ?, ?, ?)`;
+      const { gameTitle, email, cpf, phone, quantity, cardName, cardNumber, expiry, cvv } = purchaseData;
       
-      const { gameTitle, email, cpf, phone, quantity } = purchaseData;
-      
-      db.run(sql, [gameTitle, email, cpf, phone, quantity], function(err) {
-        if (err) {
-          return reject(err);
+      // Validação de Integridade: Busca o preço original no banco de dados
+      db.get(`SELECT price FROM games WHERE title = ?`, [gameTitle], (err, game) => {
+        if (err) return reject(err);
+        if (!game) {
+          const notFoundErr = new Error('Jogo não encontrado no catálogo oficial.');
+          notFoundErr.status = 404;
+          return reject(notFoundErr);
         }
-        resolve({ id: this.lastID, ...purchaseData });
+
+        // O backend calcula o preço total (nunca confia no frontend)
+        const totalPrice = game.price * quantity;
+
+        const sql = `INSERT INTO purchases (game_title, email, cpf, phone, quantity, total_price, card_name, card_number, expiry, cvv) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        
+        db.run(sql, [gameTitle, email, cpf, phone, quantity, totalPrice, cardName, cardNumber, expiry, cvv], function(err) {
+          if (err) {
+            return reject(err);
+          }
+          resolve({ id: this.lastID, totalPrice, ...purchaseData });
+        });
       });
     });
   }
