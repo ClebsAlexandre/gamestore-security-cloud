@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const purchaseController = require('./controllers/purchaseController');
 
 const app = express();
 app.use(cors());
@@ -12,6 +13,9 @@ app.get('/api/teste-erro', (req, res, next) => {
   const erroGrave = new Error(`Falha no banco de dados. API_KEY=${process.env.API_KEY} vazou!`);
   next(erroGrave); 
 });
+
+// Rota de Checkout Segura (Implementa Integridade via SQLite)
+app.post('/api/checkout', (req, res, next) => purchaseController.checkout(req, res, next));
 
 // ==========================================
 // CHECKLIST: A Tríade CID no Back-End
