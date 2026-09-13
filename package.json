@@ -1,0 +1,11 @@
+{
+  "name": "gamestore-security-cloud-root",
+  "version": "1.0.0",
+  "description": "Root package for Glitch.com deployment",
+  "scripts": {
+    "start": "cd backend && npm install && node src/main.js"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
