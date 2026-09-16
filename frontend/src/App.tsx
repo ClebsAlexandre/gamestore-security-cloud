@@ -215,7 +215,7 @@ function App() {
           const data2 = await res2.json();
           const newPid = data2.pid;
           
-          alert(`SUCESSO! O site já voltou a responder!\n\nPID Antigo (Morto): ${oldPid}\nPID Novo (Ressuscitado): ${newPid}\n\nComo os números dos processos são diferentes, fica provado visualmente que a Disponibilidade restaurou o servidor sem intervenção humana!`);
+          alert(`SUCESSO! O site não caiu e continua online!\n\nWorker atacado (Morto): ${oldPid}\nWorker que assumiu a carga (Load Balancer): ${newPid}\n\nComo os números são diferentes, fica provado o Balanceamento de Carga! Verifique no terminal que o Master já ressuscitou um substituto para manter a equipe completa!`);
         } catch(e) {
           alert("FALHA: Servidor caiu e não voltou!");
         }
