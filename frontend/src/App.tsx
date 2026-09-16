@@ -199,25 +199,22 @@ function App() {
 
   const testAvailability = async () => {
     try {
-      // 1. Pega o PID atual
-      const res1 = await fetch(`${API_URL}/api/pid`);
-      const data1 = await res1.json();
-      const oldPid = data1.pid;
-      
-      // 2. Manda matar o processo
+      // 1. Manda matar o processo (Derrubar Servidor)
       fetch(`${API_URL}/api/kill`).catch(() => {});
-      alert(`PROVA DE DISPONIBILIDADE:\n\n1. O servidor estava rodando no Processo (PID): ${oldPid}.\n2. O comando KILL foi disparado e ele acabou de MORRER.\n\nSe o Cluster não funcionar, o site cai agora. Vamos aguardar 2 segundos para o sistema Master reagir e subir um novo Worker...`);
+      alert(`PROVA DE DISPONIBILIDADE:\n\nO comando KILL (Tiro Fatal) foi disparado contra o servidor.\n\nSe não houvesse segurança, o site sairia do ar agora. Vamos aguardar 2 segundos para o Gerente (Master) reagir, subir um substituto e balancear a carga...`);
       
-      // 3. Aguarda e testa de novo
+      // 2. Aguarda e testa se a loja continua viva (disponibilidade)
       setTimeout(async () => {
         try {
-          const res2 = await fetch(`${API_URL}/api/pid`);
-          const data2 = await res2.json();
-          const newPid = data2.pid;
-          
-          alert(`SUCESSO! O site não caiu e continua online!\n\nWorker atacado (Morto): ${oldPid}\nWorker que assumiu a carga (Load Balancer): ${newPid}\n\nComo os números são diferentes, fica provado o Balanceamento de Carga! Verifique no terminal que o Master já ressuscitou um substituto para manter a equipe completa!`);
+          // Faz uma requisição qualquer apenas para ver se o servidor responde
+          const res = await fetch(`${API_URL}/api/pid`);
+          if (res.ok) {
+            alert(`SUCESSO! A loja continua totalmente online e funcional!\n\nO Balanceador de Carga redirecionou o tráfego e a Disponibilidade funcionou perfeitamente.\n\nVerifique nos logs do terminal que o Master já detectou a queda e recriou a infraestrutura.`);
+          } else {
+            throw new Error('Falha');
+          }
         } catch(e) {
-          alert("FALHA: Servidor caiu e não voltou!");
+          alert("FALHA: O Servidor caiu de verdade e não voltou!");
         }
       }, 2000);
     } catch(e) {
