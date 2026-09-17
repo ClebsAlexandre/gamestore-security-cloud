@@ -312,6 +312,7 @@ function App() {
                     id="email"
                     type="email" 
                     required 
+                    maxLength={100}
                     placeholder="seu.email@exemplo.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
