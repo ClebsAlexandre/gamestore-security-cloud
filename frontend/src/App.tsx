@@ -71,9 +71,6 @@ const games: Game[] = [
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPass, setLoginPass] = useState('');
 
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [email, setEmail] = useState('');
@@ -134,10 +131,6 @@ function App() {
   };
 
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoggedIn(true);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,45 +218,6 @@ function App() {
   return (
     <div className="gamestore-wrapper">
       
-      {!isLoggedIn ? (
-        /* LOGIN VIEW VISUAL */
-        <div className="login-view fade-in">
-          <div className="nav-logo glitch-text" data-text="NEXUS" style={{marginBottom: '2.5rem', textAlign: 'center', fontSize: '2.5rem'}}>NEXUS STORE</div>
-          
-          <form onSubmit={handleLogin} className="checkout-form glass-panel" style={{ padding: '3rem' }}>
-            <h3 style={{ textAlign: 'center', margin: '0 0 2rem 0', borderBottom: 'none' }}>Login</h3>
-            
-            <div className="form-group">
-              <label htmlFor="loginEmail">E-mail de acesso:</label>
-              <input 
-                id="loginEmail"
-                type="email" 
-                required 
-                placeholder="seu@email.com"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="loginPass">Senha de segurança:</label>
-              <input 
-                id="loginPass"
-                type="password" 
-                required 
-                maxLength={20}
-                placeholder="••••••••"
-                value={loginPass}
-                onChange={(e) => setLoginPass(e.target.value)}
-              />
-            </div>
-
-            <button type="submit" className="buy-button" style={{marginTop: '2rem'}}>
-              AUTENTICAR
-            </button>
-          </form>
-        </div>
-      ) : (
         <>
           {/* NAVEGAÇÃO SUPERIOR */}
           <nav className="navbar">
@@ -476,8 +430,7 @@ function App() {
         )}
 
         {/* PAINEL DE DEMONSTRAÇÃO */}
-        {isLoggedIn && (
-          <div className="demo-panel glass-panel" style={{ marginTop: '3rem', padding: '1.5rem', border: '1px solid #f0f', textAlign: 'center' }}>
+        <div className="demo-panel glass-panel" style={{ marginTop: '3rem', padding: '1.5rem', border: '1px solid #f0f', textAlign: 'center' }}>
             <h3 style={{ color: '#f0f', marginBottom: '1rem', fontSize: '1.2rem', textTransform: 'uppercase' }}>🛠️ Painel de Apresentação</h3>
             <p style={{ marginBottom: '1rem', fontSize: '0.9rem', color: '#ccc' }}>Use estes botões para testar as rotinas de segurança da loja.</p>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
@@ -485,11 +438,9 @@ function App() {
               <button onClick={testAvailability} className="secondary-btn" style={{ borderColor: '#f00', color: '#f00' }}>Testar Disponibilidade (Derrubar Servidor)</button>
             </div>
           </div>
-        )}
 
       </div>
       </>
-      )}
     </div>
   );
 }
