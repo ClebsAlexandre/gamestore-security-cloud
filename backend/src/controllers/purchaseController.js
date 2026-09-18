@@ -14,6 +14,8 @@ class PurchaseController {
 
       const result = await purchaseRepository.create({ gameTitle, email, cpf, phone, quantity, cardName, cardNumber, expiry, cvv });
       
+      console.log(`[Worker ${process.pid}] [COMPRA APROVADA] ${quantity}x '${gameTitle}' | Cliente: ${email} | Total: R$ ${result.totalPrice}`);
+
       res.status(201).json({
         success: true,
         message: 'Compra finalizada com sucesso e registrada com Integridade no banco de dados!',
