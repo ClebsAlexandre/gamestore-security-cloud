@@ -36,7 +36,7 @@ class PurchaseRepository {
     // Registra quem fez o quê no banco, para análise forense
     await db.query(`INSERT INTO audit_logs (action, details) VALUES ($1, $2)`, [
       'NOVA_COMPRA', 
-      \`Usuário (Email: ${email}) registrou a compra do jogo ${gameTitle}\`
+      `Usuário (Email: ${email}) registrou a compra do jogo ${gameTitle}`
     ]);
 
     return { id: purchaseId, totalPrice, ...purchaseData };
