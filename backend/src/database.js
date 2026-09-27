@@ -1,67 +1,99 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { Pool } = require('pg');
 
-// Cria o arquivo do banco de dados na raiz da pasta backend
-const dbPath = path.resolve(__dirname, '../gamestore.db');
+// Configuração do PostgreSQL (Isolamento de Rede - Banco na Nuvem Render)
+const connectionString = process.env.DATABASE_URL || 'postgresql://gamestore_pro_user:8inAJNQrZa5KhCkpgjvsALgZ5zZjMSSl@dpg-dasps60jo6nc73csgb7g-a.oregon-postgres.render.com/gamestore_pro';
 
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Erro ao conectar com o banco de dados SQLite:', err.message);
-  } else {
-    console.log('Conexão com o banco de dados SQLite estabelecida com sucesso.');
-    
-    // ==========================================
-    // CHECKLIST: A Tríade CID no Back-End
-    // 2. INTEGRIDADE (Validação e Constraints em Banco de Dados)
-    // ==========================================
-    // O uso do banco SQL relacional (SQLite) nos ajuda a manter a Integridade dos dados.
-    // Constraints como NOT NULL e CHECK garantem que dados inválidos não sejam gravados.
-    
-    db.serialize(() => {
-      db.run(`
-        CREATE TABLE IF NOT EXISTS games (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          title TEXT NOT NULL UNIQUE,
-          price REAL NOT NULL
-        )
-      `);
-
-      // Popula os preços originais do sistema para garantir Integridade
-      const stmt = db.prepare(`INSERT OR IGNORE INTO games (id, title, price) VALUES (?, ?, ?)`);
-      stmt.run(1, 'Cyberpunk 2077', 199.90);
-      stmt.run(2, 'Elden Ring', 249.90);
-      stmt.run(3, 'God of War', 199.90);
-      stmt.run(4, 'Red Dead Redemption 2', 299.90);
-      stmt.run(5, 'The Witcher 3: Wild Hunt', 129.99);
-      stmt.run(6, 'Grand Theft Auto V', 82.00);
-      stmt.run(7, 'Resident Evil 4', 249.00);
-      stmt.run(8, 'Hogwarts Legacy', 249.99);
-      stmt.finalize();
-
-      db.run(`
-        CREATE TABLE IF NOT EXISTS purchases (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          game_title TEXT NOT NULL,
-          email TEXT NOT NULL,
-          cpf TEXT NOT NULL,
-          phone TEXT NOT NULL,
-          quantity INTEGER NOT NULL CHECK(quantity > 0 AND quantity <= 5),
-          total_price REAL NOT NULL,
-          card_name TEXT NOT NULL,
-          card_number TEXT NOT NULL,
-          expiry TEXT NOT NULL,
-          cvv TEXT NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `, (err) => {
-        if (err) {
-          console.error('Erro ao criar tabela purchases:', err.message);
-        } else {
-          console.log('Tabelas verificadas (Integridade garantida por Constraints SQL).');
-        }
-      });
-    });
+const pool = new Pool({
+  connectionString,
+  ssl: {
+    rejectUnauthorized: false // Necessário para conexões externas na Render
   }
 });
 
-module.exports = db;
+const initDB = async () => {
+  try {
+    const client = await pool.connect();
+    console.log('✅ Conexão com o Banco PostgreSQL estabelecida com sucesso! (Isolamento de Rede)');
+
+    // ==========================================
+    // CHECKLIST: A Tríade CID no Banco de Dados
+    // ==========================================
+
+    // 1. Tabela de Jogos
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS games (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL UNIQUE,
+        price REAL NOT NULL
+      );
+    `);
+
+    // Inserir jogos padrão para garantir Integridade de preços
+    await client.query(`
+      INSERT INTO games (id, title, price) VALUES 
+      (1, 'Cyberpunk 2077', 199.90),
+      (2, 'Elden Ring', 249.90),
+      (3, 'God of War', 199.90),
+      (4, 'Red Dead Redemption 2', 299.90),
+      (5, 'The Witcher 3: Wild Hunt', 129.99),
+      (6, 'Grand Theft Auto V', 82.00),
+      (7, 'Resident Evil 4', 249.00),
+      (8, 'Hogwarts Legacy', 249.99)
+      ON CONFLICT (id) DO NOTHING;
+    `);
+
+    // 2. Tabela de Compras (Dados sensíveis)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS purchases (
+        id SERIAL PRIMARY KEY,
+        game_title VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        cpf VARCHAR(14) NOT NULL,
+        phone VARCHAR(15) NOT NULL,
+        quantity INTEGER NOT NULL CHECK(quantity > 0 AND quantity <= 5),
+        total_price REAL NOT NULL,
+        card_name VARCHAR(255) NOT NULL,
+        card_number VARCHAR(19) NOT NULL,
+        expiry VARCHAR(5) NOT NULL,
+        cvv VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 3. Tabela de Auditoria (Slide 4 - Monitoramento e Auditoria)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id SERIAL PRIMARY KEY,
+        action VARCHAR(255) NOT NULL,
+        details TEXT NOT NULL,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 4. Princípio do Menor Privilégio (Slide 3 - Controle de Acesso Granular)
+    // Criamos uma role (cargo) que SÓ tem permissão de Inserir, e não de Deletar.
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'app_user_restricted') THEN
+          CREATE ROLE app_user_restricted;
+        END IF;
+      END
+      $$;
+    `);
+    
+    await client.query(`GRANT INSERT ON purchases TO app_user_restricted;`);
+    await client.query(`REVOKE DELETE, UPDATE ON purchases FROM app_user_restricted;`);
+
+    console.log('🔒 Tabelas, Auditoria e Regras de Menor Privilégio configuradas no PostgreSQL!');
+    client.release();
+  } catch (err) {
+    console.error('❌ Erro fatal ao conectar no PostgreSQL:', err.message);
+  }
+};
+
+initDB();
+
+module.exports = {
+  query: (text, params) => pool.query(text, params),
+};
