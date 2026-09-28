@@ -1,7 +1,11 @@
 const { Pool } = require('pg');
 
-// Configuração do PostgreSQL (Isolamento de Rede - Banco na Nuvem Render)
-const connectionString = process.env.DATABASE_URL || 'postgresql://gamestore_pro_user:8inAJNQrZa5KhCkpgjvsALgZ5zZjMSSl@dpg-dasps60jo6nc73csgb7g-a.oregon-postgres.render.com/gamestore_pro';
+// Configuração do PostgreSQL (Isolamento de Rede)
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error("ERRO CRÍTICO DE SEGURANÇA: DATABASE_URL não definida!");
+  process.exit(1);
+}
 
 const pool = new Pool({
   connectionString,
@@ -81,7 +85,7 @@ const initDB = async () => {
       END
       $$;
     `);
-    
+
     await client.query(`GRANT INSERT ON purchases TO app_user_restricted;`);
     await client.query(`REVOKE DELETE, UPDATE ON purchases FROM app_user_restricted;`);
 
