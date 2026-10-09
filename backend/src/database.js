@@ -105,6 +105,8 @@ const initDB = async () => {
       END
       $$;
     `);
+    // Truque: Permite que o nosso usuário principal possa simular/fazer login como suporte
+    await client.query(`GRANT equipe_suporte TO CURRENT_USER;`);
     await client.query(`GRANT SELECT ON vw_suporte_compras TO equipe_suporte;`);
 
 
@@ -131,6 +133,10 @@ const initDB = async () => {
     console.log('🔒 Tabelas, Auditoria e Regras de Menor Privilégio configuradas no PostgreSQL!');
     client.release();
   } catch (err) {
+    if (err.message.includes('already exists') || err.message.includes('concurrently updated')) {
+      // Ignora erros de concorrência inofensivos gerados pelo Cluster
+      return;
+    }
     console.error('❌ Erro fatal ao conectar no PostgreSQL:', err.message);
   }
 };

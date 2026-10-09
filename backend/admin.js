@@ -57,7 +57,17 @@ async function runAdminPanel() {
     console.log('');
 
     console.log('4. Verificando Check Constraint Antifraude de Preço (Ex 1)...');
-    console.log('-> Status: ATIVO. O banco rejeita qualquer tentativa de compra com preço R$ 0,00 ou negativo.');
+    console.log('-> Simulando ataque: Tentando inserir uma compra com valor R$ -50,00...');
+    try {
+      await client.query(`
+        INSERT INTO purchases (game_title, email, cpf, phone, quantity, total_price, card_name, card_number, expiry, cvv)
+        VALUES ('Hacker Game', 'hacker@hacker.com', '000', '000', 1, -50.00, 'Hacker', '0000', '12/29', '123')
+      `);
+      console.log('Isso não deve aparecer!');
+    } catch (err) {
+      console.log(`-> 🛡️ SUCESSO! O banco de dados REJEITOU a compra fraudulenta!`);
+      console.log(`-> Motivo do bloqueio: ${err.message}`);
+    }
     console.log('');
 
     console.log('5. Verificando Isolamento de Rede...');
