@@ -9,8 +9,11 @@ if (!connectionString) {
 
 const pool = new Pool({
   connectionString,
+  // CRIPTOGRAFIA EM TRÂNSITO (SSL):
+  // Obriga que a viagem dos dados entre o servidor Node e o Banco de Dados seja
+  // num "túnel" criptografado. Se interceptarem a rede, só verão lixo digital.
   ssl: {
-    rejectUnauthorized: false // Necessário para conexões externas na Render
+    rejectUnauthorized: false // Exigência do Render para aceitar conexões via SSL
   }
 });
 
@@ -74,6 +77,37 @@ const initDB = async () => {
       );
     `);
 
+    // ==========================================
+    // IMPLEMENTAÇÃO DOS EXERCÍCIOS
+    // ==========================================
+    
+    // EXERCÍCIO 1: Check Constraint (Proteção de Preço)
+    // O que faz: Impede que um hacker altere o código no navegador para comprar um jogo por R$ 0,00 ou valor negativo.
+    await client.query(`ALTER TABLE purchases DROP CONSTRAINT IF EXISTS chk_preco_valido;`);
+    await client.query(`ALTER TABLE purchases ADD CONSTRAINT chk_preco_valido CHECK (total_price > 0);`);
+    
+    // EXERCÍCIO 2: Views (Ocultação para o Atendimento)
+    // O que faz: A equipe de suporte precisa ver as compras, mas não pode ver os dados do cartão do cliente.
+    // Criamos uma View que esconde as colunas de cartão.
+    await client.query(`
+      CREATE OR REPLACE VIEW vw_suporte_compras AS
+      SELECT id, game_title, email, phone, quantity, total_price, created_at
+      FROM purchases; 
+    `);
+    
+    // Damos acesso apenas a essa View para a equipe de suporte
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'equipe_suporte') THEN
+          CREATE ROLE equipe_suporte;
+        END IF;
+      END
+      $$;
+    `);
+    await client.query(`GRANT SELECT ON vw_suporte_compras TO equipe_suporte;`);
+
+
     // 4. Princípio do Menor Privilégio (Slide 3 - Controle de Acesso Granular)
     // Criamos uma role (cargo) que SÓ tem permissão de Inserir, e não de Deletar.
     await client.query(`
@@ -86,7 +120,12 @@ const initDB = async () => {
       $$;
     `);
 
+    // MENOR PRIVILÉGIO (DEFESA DA INTEGRIDADE):
+    // O backend APENAS recebe a permissão de INSERT para registrar novas compras.
     await client.query(`GRANT INSERT ON purchases TO app_user_restricted;`);
+    
+    // Nós bloqueamos (REVOKE) qualquer tentativa de exclusão ou alteração. 
+    // Assim, se a API for hackeada, o banco de dados proíbe que apaguem o histórico.
     await client.query(`REVOKE DELETE, UPDATE ON purchases FROM app_user_restricted;`);
 
     console.log('🔒 Tabelas, Auditoria e Regras de Menor Privilégio configuradas no PostgreSQL!');

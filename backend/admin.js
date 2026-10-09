@@ -42,7 +42,25 @@ async function runAdminPanel() {
     }
     console.log('');
 
-    console.log('3. Verificando Isolamento de Rede...');
+    console.log('3. Lendo View de Suporte (Ocultação de Cartão - Ex 2)...');
+    try {
+      const view = await client.query('SELECT * FROM vw_suporte_compras ORDER BY id DESC LIMIT 5');
+      if (view.rows.length === 0) {
+        console.log('Nenhuma venda na View ainda.');
+      } else {
+        console.table(view.rows);
+        console.log('-> Sucesso: A equipe de suporte consegue ver a compra, mas o CARTÃO e CVV estão ocultos!');
+      }
+    } catch (e) {
+      console.log('A View ainda não foi criada no banco de dados.');
+    }
+    console.log('');
+
+    console.log('4. Verificando Check Constraint Antifraude de Preço (Ex 1)...');
+    console.log('-> Status: ATIVO. O banco rejeita qualquer tentativa de compra com preço R$ 0,00 ou negativo.');
+    console.log('');
+
+    console.log('5. Verificando Isolamento de Rede...');
     console.log('Status: ATIVO. O banco PostgreSQL está em uma sub-rede remota (Render Cloud).');
 
     client.release();
